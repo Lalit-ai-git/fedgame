@@ -1,0 +1,149 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Federal Reserve Governor Simulation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="score-board">
+            <h2>Score: <span id="score">100</span></h2>
+            <p>Quarter: <span id="quarter">1/12</span> (12 quarters total)</p>
+        </div>
+        <h1>Federal Reserve Governor Simulation</h1>
+        <p>Welcome to the Federal Reserve Governor simulation. Your goal is to maintain economic stability by adjusting interest rates over 12 quarters.</p>
+        <div id="alert" class="alert"></div>
+        <div class="stats">
+            <div class="stat">
+                <h3>Federal Funds Rate</h3>
+                <p id="fed-rate">2.00%</p>
+            </div>
+            <div class="stat">
+                <h3>Inflation (CPI)</h3>
+                <p id="inflation">2.0%</p>
+            </div>
+            <div class="stat">
+                <h3>Unemployment</h3>
+                <p id="unemployment">4.0%</p>
+            </div>
+            <div class="stat">
+                <h3>GDP Growth</h3>
+                <p id="gdp">2.5%</p>
+            </div>
+            <div class="stat">
+                <h3>Consumer Confidence</h3>
+                <p id="confidence">100.0</p>
+            </div>
+            <div class="stat">
+                <h3>Stock Market</h3>
+                <p id="stock">0.0%</p>
+            </div>
+        </div>
+        <div class="news">
+            <h3>News Event</h3>
+            <p id="news">Quarter 1/12: Economy is stable, but global uncertainties loom.</p>
+        </div>
+        <div class="controls">
+            <button class="raise" id="raise-rate">↑ Raise Rate (0.25%)</button>
+            <button class="hold" id="hold-rate">Hold Rate Steady</button>
+            <button class="lower" id="lower-rate">↓ Lower Rate (0.25%)</button>
+        </div>
+        <div class="custom-rate">
+            <input type="number" id="custom-rate" step="0.01" placeholder="Custom Rate (%)">
+            <button id="apply-custom-rate">Apply Custom Rate</button>
+        </div>
+        <div class="history">
+            <h3>Decision History</h3>
+            <ul id="history"></ul>
+        </div>
+    </div>
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-title">Possible Outcomes</h3>
+            <p id="modal-text"></p>
+            <button id="confirm-rate">Confirm</button>
+            <button id="cancel-modal">Cancel</button>
+        </div>
+    </div>
+    <div id="form-modal" class="modal">
+        <div class="modal-content">
+            <h3>Player Information</h3>
+            <p>Please provide your details to continue after Quarter 4/12.</p>
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" placeholder="Enter your name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="Enter your email" required>
+            </div>
+            <div class="form-group">
+                <label for="country-code">Country Code</label>
+                <select id="country-code" required>
+                    <option value="">Select Country Code</option>
+                    <option value="+1">+1 (USA)</option>
+                    <option value="+91">+91 (India)</option>
+                    <option value="+44">+44 (UK)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="mobile">Mobile Number</label>
+                <input type="tel" id="mobile" placeholder="Enter your mobile number" required>
+            </div>
+            <button id="submit-form">Submit</button>
+            <button id="cancel-form">Cancel</button>
+        </div>
+    </div>
+    <div id="endgame-modal" class="modal">
+        <div class="modal-content">
+            <h3>Simulation Over</h3>
+            <p id="endgame-text"></p>
+            <p>Do you want to start a new game?</p>
+            <button id="restart-game">Yes</button>
+            <button id="no-restart">No</button>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
